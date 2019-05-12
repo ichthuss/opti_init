@@ -49,9 +49,7 @@ namespace opti_init
 	};
 
 	template<typename ...T>
-	struct list {
-		list(){this->perform();}
-	};
+	struct list {};
 
 	namespace detail {
 
@@ -219,6 +217,8 @@ namespace opti_init
 	template<>
 	template<typename H>
 	struct list<H> {
+		list(){this->perform();}
+
 		static void perform_raw() {
 			H::perform();
 		}
@@ -234,6 +234,8 @@ namespace opti_init
 	template<>
 	template<typename H, typename ...T>
 	struct list<H, T...> {
+		list(){this->perform();}
+
 		static void perform_raw() {
 			H::perform();
 			list<T...>::perform_raw();
