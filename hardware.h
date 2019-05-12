@@ -43,13 +43,8 @@ namespace opti_init
 		template <pointer_int_t ptr>
 		struct peripheral_register {
 			template <int index>
-			struct bit {
+			struct bit: peripheral_register_bit<ptr, index> {
 				typedef peripheral_register_bit<ptr, index> type;
-
-				template <int value>
-				struct set {
-					typedef modifier<ptr, 1<<index, value?(1<<index):0> type;
-				};
 			};
 		};
 
