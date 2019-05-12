@@ -40,6 +40,8 @@ namespace opti_init
 
 	template <pointer_int_t ptr, peripheral_register_t mask, peripheral_register_t val>
 	struct modifier {
+		modifier(){this->perform();}
+
 		static void perform() {
 			uint8_t value = (*reinterpret_cast<peripheral_register_t*>(ptr) & ~mask) | val;
 			*reinterpret_cast<peripheral_register_t*>(ptr) = value;
@@ -47,7 +49,9 @@ namespace opti_init
 	};
 
 	template<typename ...T>
-	struct list {};
+	struct list {
+		list(){this->perform();}
+	};
 
 	namespace detail {
 
@@ -243,6 +247,13 @@ namespace opti_init
 		typedef typename list<T...>::last last;
 	};
 
+	/*
+	By now, initializer and settings are synonyms. Later, presumed register
+	value semantics is going to be implemented with initializer class, so
+	that it may be efficiently used for first-time initialization, and
+	settings will be generic current-state-independent way of writing
+	registers
+	*/
 	template <typename ...T>
 	using initializer = list<T...>;
 
