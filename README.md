@@ -1,4 +1,4 @@
-# OptiInit &mdash; efficient and comprehensive MCU peripheral configuration library
+# Opti_init &mdash; efficient and comprehensive MCU peripheral configuration library
 When doing peripheral configuration on MCU, you often need to do several
 settings that are logically separated but belong to one register. In C, you
 may do it with either efficient but messy code:
@@ -52,7 +52,7 @@ accessed.
 
 You may use any configuration option as a standalone initializer:
 ```
-	portC<5>::output_low{};
+portC<5>::output_low{};
 ```
 
 You may combine different options and make your own initializers:
@@ -79,7 +79,7 @@ initializer<
 	... some stuff ...
 	softwareSPI<2,3,4>::init,
 	... some other stuff ...
-	>{};
+>{};
 ```
 
 For those who noticed &mdash; yes, this library may be used with avr-based
@@ -99,6 +99,7 @@ struct timer0 {
 	struct  tccr0a: peripheral_register<(pointer_int_t)(&TCCR0A)>{};
 	struct  tccr0b: peripheral_register<(pointer_int_t)(&TCCR0B)>{};
 ...
+	/* notice that settings are dispersed accross two registers */
 	typedef list<
 		tccr0a::bit<WGM02>::set<0>::type,
 		tccr0a::bit<WGM01>::set<1>::type,
