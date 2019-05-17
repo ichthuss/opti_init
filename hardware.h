@@ -34,10 +34,16 @@ namespace opti_init
 			typedef modifier<ptr, 1<<index ,0> low;
 			typedef modifier<ptr, 1<<index, 1 << index> high;
 
+			static bool get() { return !!low::get(); }
+
 			template <int value>
 			struct set {
+				set() { type{}; };
 				typedef modifier<ptr, 1<<index, value?(1<<index):0> type;
 			};
+
+			template <int value>
+			using set_t = typename set<value>::type;
 		};
 
 		template <pointer_int_t ptr>
@@ -47,6 +53,15 @@ namespace opti_init
 				typedef peripheral_register_bit<ptr, index> type;
 			};
 		};
+
+		#ifdef OPTI_INIT_TESTS
+		namespace test
+		{
+			//try to instantiate some types
+			using reg = peripheral_register< 1 >;
+			using reg_bit = peripheral_register_bit< 1, 0 >;
+		}
+		#endif // OPTI_INIT_TESTS
 
 	} // namespace hardware
 
