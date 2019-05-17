@@ -23,6 +23,8 @@
 #ifndef OPTI_INIT_INTERNALS_H
 #define OPTI_INIT_INTERNALS_H
 
+#include <stdint.h> // <cstdint> isn't available for e.g. avr-gcc
+
 namespace opti_init
 {
 
@@ -33,18 +35,27 @@ namespace opti_init
 	#elif defined(__arm__)
 		typedef uint32_t peripheral_register_t;
 		typedef uint32_t pointer_int_t;
+	#elif defined(__i386__)
+		typedef uint32_t peripheral_register_t;
+		typedef uint32_t pointer_int_t;
+	#elif defined(__x86_64__)
+		typedef uint64_t peripheral_register_t;
+		typedef uint64_t pointer_int_t;
 	#else
-		typedef uint8_fast_t peripheral_register_t;
+		typedef uint_fast8_t peripheral_register_t;
 		typedef intptr_t pointer_int_t;
 	#endif
 
-	template <pointer_int_t ptr, peripheral_register_t mask, peripheral_register_t val>
+	template <pointer_int_t ptr, peripheral_register_t mask_, peripheral_register_t val_>
 	struct modifier {
 		modifier(){this->perform();}
 
+		static const peripheral_register_t mask = mask_;
+		static const peripheral_register_t value = val_;
+
 		static void perform() {
-			uint8_t value = (*reinterpret_cast<peripheral_register_t*>(ptr) & ~mask) | val;
-			*reinterpret_cast<peripheral_register_t*>(ptr) = value;
+			uint8_t new_value = (*reinterpret_cast<volatile peripheral_register_t*>(ptr) & ~mask_) | val_;
+			*reinterpret_cast<volatile peripheral_register_t*>(ptr) = new_value;
 		}
 	};
 
@@ -261,6 +272,32 @@ namespace opti_init
 
 	template <typename ...T>
 	using settings = list<T...>;
+
+	#ifdef OPTI_INIT_TESTS
+	namespace test
+	{
+		struct combine_single_register
+		{
+			using result = detail::modifier_combine::apply<
+				modifier<1, 0x1, 0x0>,
+				modifier<1, 0x2, 0x2>
+			>::type;
+			static_assert(result::mask == 0x3, "mask invalid on combining modifiers");
+			static_assert(result::value == 0x2, "value invalid on combining modifiers");
+		};
+
+		struct combine_different_registers
+		{
+			using result = detail::modifier_combine::apply<
+				modifier<1, 0x1, 0x0>,
+				modifier<2, 0x2, 0x2>
+			>::type;
+			static_assert(result::mask == 0x1, "mask invalid on combining modifiers");
+			static_assert(result::value == 0x0, "value invalid on combining modifiers");
+		};
+	}
+	#endif // OPTI_INIT_TESTS
 }
 
 #endif
+
