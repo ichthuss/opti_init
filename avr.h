@@ -29,16 +29,16 @@ namespace opti_init
 	{
 		template<pointer_int_t ptr_direction, pointer_int_t ptr_value, peripheral_register_t bit>
 		struct gpio {
-			typedef list< modifier< ptr_value, (1<<bit), 0 >, modifier< ptr_direction, (1<<bit), (1<<bit) > > output_low;
-			typedef list< modifier< ptr_value, (1<<bit), (1<<bit) >, modifier< ptr_direction, 1<<bit, (1<<bit) > > output_high;
+			using input_any  = modifier< ptr_direction, (1<<bit), 0 >;
+			using output_any = modifier< ptr_direction, (1<<bit), (1<<bit) >;
+			using low  = modifier< ptr_value, (1<<bit), 0 >;
+			using high = modifier< ptr_value, (1<<bit), (1<<bit) >;
 
-			typedef list< modifier< ptr_value, (1<<bit), 0 >, modifier< ptr_direction, (1<<bit), 0 > > input_floating;
-			typedef list< modifier< ptr_value, (1<<bit), (1<<bit) >, modifier< ptr_direction, (1<<bit), 0 > > input_pullup;
+			using output_low = list< low, output_any >;
+			using output_high = list< high, output_any >;
 
-			typedef modifier< ptr_direction, (1<<bit), 0 > input_any;
-			typedef modifier< ptr_direction, (1<<bit), (1<<bit) > output_any;
-			typedef modifier< ptr_value, (1<<bit), 0 > low;
-			typedef modifier< ptr_value, (1<<bit), (1<<bit) > high;
+			using input_floating = list< low, input_any>;
+			using input_pullup =  list< high, input_any>;
 
 			using input = input_floating;
 			using output = output_any;
@@ -176,9 +176,18 @@ namespace opti_init
 		#endif
 
 		template <int number>
-		struct digitalPin : gpio<(pointer_int_t)( digitalPinToDDRReg(number)),(pointer_int_t)( digitalPinToPortReg(number)),__digitalPinToBit(number)> {};
+		using digitalPin = typename gpio<(pointer_int_t)( digitalPinToDDRReg(number)),(pointer_int_t)( digitalPinToPortReg(number)),__digitalPinToBit(number)>;
 
 #endif // ARDUINO
- }
+
+		#ifdef OPTI_INIT_TESTS
+		namespace test
+		{
+			// instantiate some classes
+			using my_gpio = gpio<1, 2, 0>;
+		}
+		#endif // OPTI_INIT_TEST
+
+	}
 }
 #endif

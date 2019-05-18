@@ -50,6 +50,8 @@ namespace opti_init
 	struct modifier {
 		modifier(){this->perform();}
 
+		using type = modifier<ptr, mask_, val_>;
+
 		static const peripheral_register_t mask = mask_;
 		static const peripheral_register_t value = val_;
 

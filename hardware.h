@@ -31,27 +31,30 @@ namespace opti_init
 	{
 		template <pointer_int_t ptr, int index>
 		struct peripheral_register_bit {
+
+			using type = peripheral_register_bit<ptr, index>;
+
 			typedef modifier<ptr, 1<<index ,0> low;
 			typedef modifier<ptr, 1<<index, 1 << index> high;
 
 			static bool get() { return !!low::get(); }
 
+
+			template <int value>
+			using set = modifier<ptr, 1<<index, value?(1 << index):0>;
+/*
 			template <int value>
 			struct set {
 				set() { type{}; };
 				typedef modifier<ptr, 1<<index, value?(1<<index):0> type;
 			};
-
-			template <int value>
-			using set_t = typename set<value>::type;
+*/
 		};
 
 		template <pointer_int_t ptr>
 		struct peripheral_register {
 			template <int index>
-			struct bit: peripheral_register_bit<ptr, index> {
-				typedef peripheral_register_bit<ptr, index> type;
-			};
+			using bit = peripheral_register_bit<ptr, index>;
 		};
 
 		#ifdef OPTI_INIT_TESTS
@@ -60,6 +63,8 @@ namespace opti_init
 			//try to instantiate some types
 			using reg = peripheral_register< 1 >;
 			using reg_bit = peripheral_register_bit< 1, 0 >;
+			using reg_bit2 = reg::bit<0>;
+			using reg_bit3 = reg::bit<0>::type;
 		}
 		#endif // OPTI_INIT_TESTS
 
