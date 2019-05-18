@@ -23,6 +23,10 @@
 #ifndef OPTI_INIT_H
 #define OPTI_INIT_H
 
+#ifdef OPTI_INIT_TESTS
+#include "tests.h"
+#endif
+
 #include "internals.h"
 #include "hardware.h"
 

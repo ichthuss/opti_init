@@ -60,11 +60,23 @@ namespace opti_init
 		#ifdef OPTI_INIT_TESTS
 		namespace test
 		{
+
+			using namespace opti_init::test::utils;
+
 			//try to instantiate some types
 			using reg = peripheral_register< 1 >;
 			using reg_bit = peripheral_register_bit< 1, 0 >;
 			using reg_bit2 = reg::bit<0>;
 			using reg_bit3 = reg::bit<0>::type;
+
+			using reg_mod_low = modifier<1, (1 << 0), 0>;
+			using reg_mod_high = modifier<1, (1 << 0), (1 << 0)>;
+
+			static_assert(is_same<reg_bit, reg_bit2>::value, "peripheral register bit resolution is not consistent");
+			static_assert(is_same<reg_bit, reg_bit3>::value, "peripheral register bit resolution is not consistent");
+
+			static_assert(is_same<reg_bit::set<0>, reg_mod_low>::value, "peripheral register bit setting type invalid");
+			static_assert(is_same<reg_bit::set<1>, reg_mod_high>::value, "peripheral register bit setting type invalid");
 		}
 		#endif // OPTI_INIT_TESTS
 
