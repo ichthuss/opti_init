@@ -1,4 +1,4 @@
-# Opti_init &mdash; efficient and comprehensive MCU peripheral configuration library
+# Opti_init &mdash; library for efficient and comprehensive MCU peripheral configuration
 When doing peripheral configuration on MCU, you often need to do several
 settings that are logically separated but belong to one register. In C, you
 may do it with either efficient but messy code:
@@ -23,7 +23,7 @@ settings. This headers-only library uses C++ template metaprogramming dark
 magic to do both. E.g., code above becomes as easy as
 ```
 using namespace opti_init::hardware;
-void init_pins() {
+...
 	initializer<
 		portA<0>::input_floating,
 		portA<1>::input_floating,
@@ -34,7 +34,6 @@ void init_pins() {
 		portA<6>::output_low,
 		portA<7>::input_floating
 	>{};
-}
 ```
 This code is as clear as second sample above and as effective as first sample.
 
@@ -62,11 +61,11 @@ using namespace opti_init::hardware;
 
 template <int MISO, int MOSI, int CLK>
 struct softwareSPI {
-	typedef list<
+	using init = list<
 		digitalPin<MISO>::input_floating,
 		digitalPin<MOSI>::output_high,
 		digitalPin<CLK>::output_high
-	> init;
+	>;
 };
 ```
 And use it as standalone option or combining it with other initialization:
@@ -96,21 +95,21 @@ memory-mapped register, e.g.:
 struct timer0 {
 
 	// wrap TCCR0A & TCCR0B registers
-	struct  tccr0a: peripheral_register<(pointer_int_t)(&TCCR0A)>{};
-	struct  tccr0b: peripheral_register<(pointer_int_t)(&TCCR0B)>{};
+	using tccr0a = peripheral_register<(pointer_int_t)(&TCCR0A)>;
+	using tccr0b = peripheral_register<(pointer_int_t)(&TCCR0B)>;
 ...
 	/* notice that settings are dispersed accross two registers */
-	typedef list<
-		tccr0a::bit<WGM02>::set<0>::type,
-		tccr0a::bit<WGM01>::set<1>::type,
-		tccr0b::bit<WGM00>::set<1>::type
-	> mode_fast_pwm_max;
+	using mode_fast_pwm_max = list<
+		tccr0a::bit<WGM02>::set<0>,
+		tccr0a::bit<WGM01>::set<1>,
+		tccr0b::bit<WGM00>::set<1>
+	>;
 ...
-	typedef list<
-		tccr0b::bit<CS02>::set<0>::type,
-		tccr0b::bit<CS01>::set<1>::type,
-		tccr0b::bit<CS00>::set<1>::type
-	> clk_divider_64;
+	using clk_divider_64 = list<
+		tccr0b::bit<CS02>::set<0>,
+		tccr0b::bit<CS01>::set<1>,
+		tccr0b::bit<CS00>::set<1>
+	>;
 ...
 };
 
@@ -120,7 +119,7 @@ initializer<
 >{};
 ```
 
-## Known issues
+## Known issues & limitations
 Registers are modified in a "first mentioned" order. It may cause an issue
 if two initializers that require opposite order of register modification
 are combined into single initializer. This issue may be addressed, but it
@@ -129,7 +128,7 @@ cruel necromancy to implement it, so I'm unsure if I going to do it any
 time soon.
 
 There is no way to assign presumed values to bits. It means that, unless you
-set all bits of the register, it will be modified with read-modify-write
+set all bits of the register, it will be accessed with read-modify-write
 sequence instead of single write operation. It's what's needed when you
 modify register during program execution, but is suboptimal when used
 for initial settings where register value is known in advance.
