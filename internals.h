@@ -55,9 +55,19 @@ namespace opti_init
 		static const peripheral_register_t mask = mask_;
 		static const peripheral_register_t value = val_;
 
+		static bool constexpr is_write_only() { return (~mask) == 0; };
+
 		static void perform() {
-			uint8_t new_value = (*reinterpret_cast<volatile peripheral_register_t*>(ptr) & ~mask_) | val_;
-			*reinterpret_cast<volatile peripheral_register_t*>(ptr) = new_value;
+			// typically compiler optimizes it itself, but let's write it explicitly
+			// don't use 'if constexpr' because code should be c++11-compliant
+			if (is_write_only())
+			{
+				*reinterpret_cast<volatile peripheral_register_t*>(ptr) = val_;
+			} else
+			{
+				uint8_t new_value = (*reinterpret_cast<volatile peripheral_register_t*>(ptr) & ~mask_) | val_;
+				*reinterpret_cast<volatile peripheral_register_t*>(ptr) = new_value;
+			}
 		}
 	};
 
