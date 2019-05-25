@@ -32,29 +32,36 @@ namespace opti_init
 		template <pointer_int_t ptr, int index>
 		struct peripheral_register_bit {
 
+			static constexpr int bit_index = index;
+			static constexpr int bit_mask = (1 << index);
+
+			static constexpr peripheral_register_t * pointer() {
+				return reinterpret_cast<peripheral_register_t *>(ptr);
+			}
+
 			using type = peripheral_register_bit<ptr, index>;
 
-			typedef modifier<ptr, 1<<index ,0> low;
-			typedef modifier<ptr, 1<<index, 1 << index> high;
+			typedef modifier<ptr, bit_mask ,0> low;
+			typedef modifier<ptr, bit_mask, bit_mask> high;
 
-			static bool get() { return !!low::get(); }
-
+			static bool get_f() { return !!(*pointer() & bit_mask); }
+			static void set_f(bool value) { *pointer() = value? *pointer() | bit_mask : *pointer() & ~bit_mask; }
 
 			template <int value>
-			using set = modifier<ptr, 1<<index, value?(1 << index):0>;
-/*
-			template <int value>
-			struct set {
-				set() { type{}; };
-				typedef modifier<ptr, 1<<index, value?(1<<index):0> type;
-			};
-*/
+			using set = modifier<ptr, bit_mask, value?bit_mask:0>;
 		};
 
 		template <pointer_int_t ptr>
 		struct peripheral_register {
+			static constexpr peripheral_register_t * pointer() {
+				return reinterpret_cast<peripheral_register_t *>(ptr);
+			}
+
 			template <int index>
 			using bit = peripheral_register_bit<ptr, index>;
+
+			template <int index, bool value>
+			using set = typename peripheral_register_bit<ptr, index>::template set<value>;
 		};
 
 		#ifdef OPTI_INIT_TESTS
@@ -66,6 +73,12 @@ namespace opti_init
 			//try to instantiate some types
 			using reg = peripheral_register< 1 >;
 			using reg_bit = peripheral_register_bit< 1, 0 >;
+
+			static_assert(reg::pointer() == (peripheral_register_t *)(1), "register pointer invalid");
+			static_assert(reg_bit::pointer() == (peripheral_register_t *)(1), "register bit pointer invalid");
+			static_assert(reg_bit::bit_index == 0, "register bit index invalid");
+			static_assert(reg_bit::bit_mask == (1 << 0), "register bit mask invalid");
+
 			using reg_bit2 = reg::bit<0>;
 			using reg_bit3 = reg::bit<0>::type;
 

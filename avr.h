@@ -27,12 +27,15 @@ namespace opti_init
 {
 	namespace hardware
 	{
-		template<pointer_int_t ptr_direction, pointer_int_t ptr_value, peripheral_register_t bit>
+		template<pointer_int_t ptr_direction, pointer_int_t ptr_value, pointer_int_t ptr_read, int bit>
 		struct gpio {
-			using input_any  = modifier< ptr_direction, (1<<bit), 0 >;
-			using output_any = modifier< ptr_direction, (1<<bit), (1<<bit) >;
-			using low  = modifier< ptr_value, (1<<bit), 0 >;
-			using high = modifier< ptr_value, (1<<bit), (1<<bit) >;
+			static constexpr int bit_index = bit;
+			static constexpr int bit_mask = (1 << bit);
+
+			using input_any  = modifier< ptr_direction, bit_mask, 0 >;
+			using output_any = modifier< ptr_direction, bit_mask, bit_mask >;
+			using low  = modifier< ptr_value, bit_mask, 0 >;
+			using high = modifier< ptr_value, bit_mask, bit_mask >;
 
 			using output_low = list< low, output_any >;
 			using output_high = list< high, output_any >;
@@ -42,11 +45,36 @@ namespace opti_init
 
 			using input = input_floating;
 			using output = output_any;
+
+			using ddr_register_bit = peripheral_register_bit<ptr_direction, bit>;
+			using port_register_bit = peripheral_register_bit<ptr_value, bit>;
+			using pin_register_bit = peripheral_register_bit<ptr_read, bit>;
+
+			template <bool value>
+			using set = typename port_register_bit::template set<value>;
+
+			static bool get_f() { return pin_register_bit::get_f(); }
+			static void set_f(bool value) { port_register_bit::set_f(value); }
+
+			// static const members should be initialized by constexpr, and
+			// reinterpret_cast is not allowed in constexpr, so we use
+			// constexpr function instead
+			static constexpr peripheral_register_t * ddr_reg_ptr() {
+				return reinterpret_cast<peripheral_register_t *>(ptr_direction);
+			}
+
+			static constexpr peripheral_register_t * port_reg_ptr() {
+				return reinterpret_cast<peripheral_register_t *>(ptr_value);
+			}
+
+			static constexpr peripheral_register_t * pin_reg_ptr() {
+				return reinterpret_cast<peripheral_register_t *>(ptr_read);
+			}
 		};
 
 		#define __AVR_PORT(X) \
 				template <int index> \
-				struct port##X : gpio<(pointer_int_t)(&DDR##X), (pointer_int_t)(&PORT##X), index> {};
+				struct port##X : gpio<(pointer_int_t)(&DDR##X), (pointer_int_t)(&PORT##X), (pointer_int_t)(&PIN##X), index> {};
 
 		#ifdef PORTA
 			__AVR_PORT(A);
@@ -183,8 +211,21 @@ namespace opti_init
 		#ifdef OPTI_INIT_TESTS
 		namespace test
 		{
+			using namespace opti_init::test::utils;
+
 			// instantiate some classes
-			using my_gpio = gpio<1, 2, 0>;
+			using my_gpio = gpio<1, 2, 3, 0>;
+
+			static_assert(my_gpio::bit_index == 0, "Bit index invalid");
+			static_assert(my_gpio::bit_mask == (1 << 0), "Bit mask invalid");
+			static_assert(my_gpio::ddr_reg_ptr() == (peripheral_register_t *)(1), "DDRx pointer invalid");
+			static_assert(my_gpio::port_reg_ptr() == (peripheral_register_t *)(2), "PORTx pointer invalid");
+			static_assert(my_gpio::pin_reg_ptr() == (peripheral_register_t *)(3), "PINx pointer invalid");
+
+			using m0 = my_gpio::set<0>;
+			using m1 = my_gpio::set<1>;
+			static_assert(is_same<m0, my_gpio::low >::value, "::set<0> isn't equal to ::low");
+			static_assert(is_same<m1, my_gpio::high >::value, "::set<1> isn't equal to ::high");
 		}
 		#endif // OPTI_INIT_TEST
 

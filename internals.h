@@ -55,6 +55,10 @@ namespace opti_init
 		static const peripheral_register_t mask = mask_;
 		static const peripheral_register_t value = val_;
 
+		static constexpr peripheral_register_t * pointer() {
+			return reinterpret_cast<peripheral_register_t *>(ptr);
+		}
+
 		static bool constexpr is_write_only() { return (~mask) == 0; };
 
 		static void perform() {
@@ -288,6 +292,14 @@ namespace opti_init
 	#ifdef OPTI_INIT_TESTS
 	namespace test
 	{
+		struct instantiate_modifier
+		{
+			using m = modifier<1, 0x3, 0x1>;
+			static_assert(m::value == 0x1, "value invalid");
+			static_assert(m::mask == 0x3, "mask invalid");
+			static_assert(m::pointer() == (peripheral_register_t *)(1), "pointer invalid");
+		};
+
 		struct combine_single_register
 		{
 			using result = detail::modifier_combine::apply<
